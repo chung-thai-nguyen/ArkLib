@@ -90,15 +90,13 @@ end FullBasefold
 
 section FullFRIBinius
 open Binius.FRIBinius Binius.FRIBinius.RingSwitch
+open scoped Binius.FRIBinius
 
 variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [SampleableType L]
-  (K : Type) [Field K] [Fintype K] [DecidableEq K] [Fact (Fintype.card K = 2)]
-  [Algebra K L] (β : Module.Basis (Fin (2 ^ κ)) K L) [Fact (β 0 = 1)]
+  [CharP L 2]
+  (K : Type) [Field K] [Algebra K L] (β : Module.Basis (Fin (2 ^ κ)) K L) [Fact (β 0 = 1)]
   {ℓ ℓ' R ϑ : ℕ} [NeZero ℓ'] [NeZero R] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
   (h_rate : ℓ' + R < 2 ^ κ) (h_dim : ℓ = ℓ' + κ)
-
-omit [Fintype K] in
-local instance [Finite K] : Fact (Nat.Prime (ringChar K)) := ⟨CharP.prime_ringChar K⟩
 
 example (γ : ℕ) {σ : Type} (init : ProbComp σ)
     (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
@@ -118,12 +116,12 @@ example (γ : ℕ) {σ : Type} (init : ProbComp σ)
 example (Context : Type) (γ : ℕ) {σ : Type} (init : ProbComp σ)
     (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     OracleProof.knowledgeSoundness init impl
-      (Binius.BinaryBasefold.Opening.contextualInputRelation K β Context
+      (Binius.BinaryBasefold.Opening.contextualInputRelation (ZMod 2) β Context
         (ϑ := ϑ) (h_rate := h_rate))
-      (Binius.BinaryBasefold.Opening.contextualVerifier K β Context γ
+      (Binius.BinaryBasefold.Opening.contextualVerifier (ZMod 2) β Context γ
         (ϑ := ϑ) (h_rate := h_rate))
       (Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError L ℓ' R γ) :=
-  Binius.BinaryBasefold.Opening.contextualVerifier_knowledgeSoundness K β Context γ init impl
+  Binius.BinaryBasefold.Opening.contextualVerifier_knowledgeSoundness (ZMod 2) β Context γ init impl
 end FullFRIBinius
 
 end ArkLibTest.Binius.OrdinaryKnowledgeSoundness

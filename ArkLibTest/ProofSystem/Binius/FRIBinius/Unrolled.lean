@@ -6,6 +6,7 @@ Authors: Chung Thai Nguyen, Alexander Hicks
 
 import ArkLibTest.ProofSystem.RingSwitching.Conformance.BiniusComposition
 import ArkLib.ProofSystem.Binius.FRIBinius.Unrolled.General
+import CompPoly.Fields.Binary.Tower.Concrete.Basis
 
 /-!
 # Unrolled FRI-Binius regression checks
@@ -34,6 +35,7 @@ local instance : SampleableType Gf16 := SampleableType.ofFintype Gf16
 local instance : Fact (Fintype.card (ZMod 2) = 2) := ⟨by simp⟩
 local instance : Fact ((1 : ℕ) ∣ 1) := ⟨by decide⟩
 local instance : Fact (basis 0 = 1) := ⟨betaBasis_zero⟩
+local instance : Fact (LinearIndependent (ZMod 2) ⇑basis) := ⟨basis.linearIndependent⟩
 local instance : Fact (Nat.Prime (ringChar (ZMod 2))) :=
   ⟨CharP.prime_ringChar (ZMod 2)⟩
 
@@ -124,6 +126,79 @@ example (s : Statement (L := Gf16) (SumcheckBaseContext Gf16 1) (Fin.last 1) ×
 end FinalCheck
 
 end ArkLibTest.FRIBinius.Unrolled
+
+/-! ### A ground field larger than the prime field -/
+
+namespace ArkLibTest.FRIBinius.NonBitGroundField
+
+open ConcreteBinaryTower
+
+private abbrev K := ConcreteBTField 1
+private abbrev L := ConcreteBTField 3
+
+local instance : Algebra K L := ConcreteBTFieldAlgebra (h_le := by decide)
+local instance : Fintype L := (getBTFResult 3).instFintype
+local instance : SampleableType L := SampleableType.ofFintype L
+
+private def basis : Basis (Fin (2 ^ 2)) K L := multilinearBasis 1 3 (by decide)
+
+local instance : Fact (basis 0 = 1) := ⟨by
+  rw [basis, multilinearBasis_apply]
+  simp [Nat.getBit]⟩
+local instance : Fact ((1 : ℕ) ∣ 1) := ⟨dvd_refl 1⟩
+
+private theorem hrate : 1 + 1 < 2 ^ 2 := by decide
+private theorem hdim : 3 = 1 + 2 := rfl
+private abbrev profile := Binius.FRIBinius.biniusProfile 2 L K basis
+private abbrev interface :=
+  Binius.FRIBinius.RingSwitch.inputInterface 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate
+private abbrev modularVerifier :=
+  Binius.FRIBinius.RingSwitch.fullVerifier 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8
+private abbrev unrolledVerifier :=
+  Binius.FRIBinius.Unrolled.fullVerifier 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8
+
+example : Fintype.card K = 4 := (getBTFResult 1).fieldFintypeCard
+
+private theorem card_extension : Fintype.card L = 256 :=
+  (getBTFResult 3).fieldFintypeCard.trans (by norm_num)
+
+/-- Both verifiers have round-by-round knowledge soundness for the same input relation over
+the four-element ground field. -/
+example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
+    (modularVerifier.toVerifier
+      (Oₛₒ := fun i : Empty => nomatch i)).rbrKnowledgeSoundness init impl
+      (TensorPrefix.relIn profile hdim interface) acceptRejectOracleRel
+      (Binius.FRIBinius.RingSwitch.fullError 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate 8) ∧
+    (unrolledVerifier.toVerifier
+      (Oₛₒ := fun i : Empty => nomatch i)).rbrKnowledgeSoundness init impl
+      (TensorPrefix.relIn profile hdim interface) acceptRejectOracleRel
+      (Binius.FRIBinius.Unrolled.fullError 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate 8) :=
+  ⟨Binius.FRIBinius.RingSwitch.fullVerifier_rbrKnowledgeSoundness 2 K basis
+      (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl,
+    Binius.FRIBinius.Unrolled.fullVerifier_rbrKnowledgeSoundness 2 K basis
+      (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl⟩
+
+example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
+    OracleProof.perfectCompleteness
+      (oracleProof := Binius.FRIBinius.Unrolled.fullReduction 2 K basis
+        (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8)
+      (relation := TensorPrefix.relIn profile hdim interface.strictView)
+      (init := init) (impl := impl) ∧
+    OracleProof.knowledgeSoundness init impl (TensorPrefix.relIn profile hdim interface)
+      unrolledVerifier
+      (Binius.FRIBinius.Unrolled.concreteError 2 (L := L) (ℓ' := 1) (R := 1) 8) :=
+  Binius.FRIBinius.Unrolled.fullReduction_perfectCompleteness_and_knowledgeSoundness 2 K basis
+    (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl
+
+example :
+    Binius.FRIBinius.RingSwitch.concreteError 2 (L := L) (ℓ' := 1) (R := 1) 8 < 1 ∧
+    Binius.FRIBinius.Unrolled.concreteError 2 (L := L) (ℓ' := 1) (R := 1) 8 < 1 := by
+  constructor
+  · norm_num [Binius.FRIBinius.RingSwitch.concreteError,
+      Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError, card_extension]
+  · norm_num [Binius.FRIBinius.Unrolled.concreteError, card_extension]
+
+end ArkLibTest.FRIBinius.NonBitGroundField
 
 /--
 info: 'Binius.FRIBinius.Unrolled.fullVerifier_rbrKnowledgeSoundness' depends on axioms:

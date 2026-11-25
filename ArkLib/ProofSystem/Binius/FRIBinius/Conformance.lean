@@ -21,11 +21,10 @@ the relaxed input relation uses the same packed polynomial with unique-radius co
 noncomputable section
 namespace Binius.FRIBinius.Conformance
 open Module MvPolynomial RingSwitching RingSwitching.Packing Sumcheck.Structured
+open scoped Binius.FRIBinius
 
-variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L]
-  (K : Type) [Field K] [Fintype K] [Fact (Fintype.card K = 2)] [Algebra K L]
-  (β : Basis (Fin (2 ^ κ)) K L)
-local instance [Finite K] : Fact (Nat.Prime (ringChar K)) := ⟨CharP.prime_ringChar K⟩
+variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [CharP L 2]
+  (K : Type) [Field K] [Algebra K L] (β : Basis (Fin (2 ^ κ)) K L)
 variable {ℓ ℓ' R ϑ : ℕ} [NeZero ℓ'] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
   (h_rate : ℓ' + R < 2 ^ κ) (h_dim : ℓ = ℓ' + κ)
 
@@ -35,9 +34,9 @@ theorem mem_relIn_iff (r : Fin ℓ → L) (s : L)
     (t : MultilinearPoly K ℓ) :
     (((r, s), ost), t) ∈ TensorPrefix.relIn (biniusProfile κ L K β) h_dim
         (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate) ↔
-      s = aeval r t.val ∧ BinaryBasefold.FirstOracleWitnessConsistent K β
+      s = aeval r t.val ∧ BinaryBasefold.FirstOracleWitnessConsistent (ZMod 2) β
         (packMLE κ L K ℓ ℓ' h_dim (biniusProfile κ L K β).basis t)
-        (BinaryBasefold.getFirstOracle K β ost) := by
+        (BinaryBasefold.getFirstOracle (ZMod 2) β ost) := by
   change (s = aeval r t.val ∧ _ ) ↔ _
   rw [TensorPrefix.packedMLE_components_eq_packMLE]
   rfl

@@ -65,16 +65,13 @@ namespace Binius.FRIBinius.Unrolled
 
 open OracleSpec OracleComp ProtocolSpec Module RingSwitching RingSwitching.Packing
 open Binius.BinaryBasefold
-open scoped NNReal
+open scoped NNReal Binius.FRIBinius
 
-variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [SampleableType L]
-variable (K : Type) [Field K] [Fintype K] [DecidableEq K]
-  [Fact (Fintype.card K = 2)] [Algebra K L]
+variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [SampleableType L] [CharP L 2]
+variable (K : Type) [Field K] [Algebra K L]
 variable (β : Basis (Fin (2 ^ κ)) K L) [Fact (β 0 = 1)]
 variable {ℓ ℓ' R ϑ : ℕ} [NeZero ℓ'] [NeZero R] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
 variable (h_rate : ℓ' + R < 2 ^ κ) (h_l : ℓ = ℓ' + κ)
-
-local instance [Finite K] : Fact (Nat.Prime (ringChar K)) := ⟨CharP.prime_ringChar K⟩
 
 /-! ## Protocol definitions -/
 
@@ -88,12 +85,12 @@ noncomputable instance (γ : ℕ) : ∀ i, SampleableType
 
 /-- The Binary Basefold opening of the head's product claim at the ring-switching multiplier. -/
 noncomputable def tailVerifier (γ : ℕ) :=
-  ProductClaim.openingVerifier K β (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
+  ProductClaim.openingVerifier (ZMod 2) β (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
     (ProductSumcheck.Statement.claim (m := ℓ')) γ (ϑ := ϑ) (h_rate := h_rate)
 
 /-- The honest Binary Basefold opening of the head's product claim. -/
 noncomputable def tailReduction (γ : ℕ) :=
-  ProductClaim.openingReduction K β (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
+  ProductClaim.openingReduction (ZMod 2) β (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
     (ProductSumcheck.Statement.claim (m := ℓ')) (Equiv.refl _) γ (ϑ := ϑ)
     (h_rate := h_rate)
 
@@ -121,13 +118,13 @@ theorem fullReduction_verifier (γ : ℕ) :
 
 ### The head's product claim -/
 
-omit [DecidableEq K] [Fact (β 0 = 1)] [NeZero R] in
+omit [Fact (β 0 = 1)] [NeZero R] in
 /-- The head's output relation is the product-claim relation of Binary Basefold at the
 ring-switching multiplier. -/
 theorem headRelOut_eq :
     TensorPrefix.headRelOut (biniusProfile κ L K β) h_l
         (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate) =
-      ProductClaim.inputRelation K β (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
+      ProductClaim.inputRelation (ZMod 2) β (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
         (ProductSumcheck.Statement.claim (m := ℓ')) (Equiv.refl _) (ϑ := ϑ)
         (h_rate := h_rate) := by
   ext ⟨⟨s, ost⟩, p⟩
@@ -135,13 +132,13 @@ theorem headRelOut_eq :
   simp only [MvPolynomial.aeval_def]
   rfl
 
-omit [DecidableEq K] [Fact (β 0 = 1)] [NeZero R] in
+omit [Fact (β 0 = 1)] [NeZero R] in
 /-- The head's strict output relation is the strict product-claim relation of Binary Basefold
 at the ring-switching multiplier. -/
 theorem headRelOut_strictView_eq :
     TensorPrefix.headRelOut (biniusProfile κ L K β) h_l
         (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate).strictView =
-      ProductClaim.strictInputRelation K β
+      ProductClaim.strictInputRelation (ZMod 2) β
         (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
         (ProductSumcheck.Statement.claim (m := ℓ')) (Equiv.refl _) (ϑ := ϑ)
         (h_rate := h_rate) := by
@@ -160,8 +157,8 @@ theorem tailVerifier_rbrKnowledgeSoundness (γ : ℕ) {σ : Type}
       (Oₛₒ := fun i : Empty => nomatch i)).rbrKnowledgeSoundness init impl
       (TensorPrefix.headRelOut (biniusProfile κ L K β) h_l
         (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate))
-      acceptRejectOracleRel (ProductClaim.openingError K β γ (ϑ := ϑ) (h_rate := h_rate)) :=
-  ProductClaim.openingVerifier_rbrKnowledgeSoundness K β
+      acceptRejectOracleRel (ProductClaim.openingError (ZMod 2) β γ (ϑ := ϑ) (h_rate := h_rate)) :=
+  ProductClaim.openingVerifier_rbrKnowledgeSoundness (ZMod 2) β
     (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
     (ProductSumcheck.Statement.claim (m := ℓ')) (Equiv.refl _) _ γ init impl
     (headRelOut_eq κ K β h_rate h_l).ge
@@ -236,7 +233,7 @@ theorem fullReduction_perfectCompleteness (γ : ℕ) {σ : Type}
     (Verifier.GuardedForm.ofEmpty _ (fun _ => (false, fun i => nomatch i)))
     (fun _ => Or.inl inferInstance) hhead
   intro s
-  exact ProductClaim.openingReduction_perfectCompleteness K β
+  exact ProductClaim.openingReduction_perfectCompleteness (ZMod 2) β
     (TensorPrefix.multiplier (biniusProfile κ L K β) h_l)
     (ProductSumcheck.Statement.claim (m := ℓ')) (Equiv.refl _) _ γ (pure s) impl
     (headRelOut_strictView_eq κ K β h_rate h_l).le
