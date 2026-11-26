@@ -125,10 +125,11 @@ plus the concrete Binary Basefold knowledge error
 A backend whose own sum-check accepts a product claim can instead take the head's output
 directly. The [unrolled Binius protocol][unrolled] composes `TensorPrefix.headVerifier` with the
 Binary Basefold product-claim opening at `TensorPrefix.multiplier`, so the ring-switching product
-sum-check is the Binary Basefold loop. It is stated for the same input relation as the
-separate-sum-check composition; its bound
-`Binius.FRIBinius.Unrolled.concreteError` is lower by one sum-check term
-(`Binius.FRIBinius.Unrolled.concreteError_add_eq`).
+sum-check is the Binary Basefold loop. It uses the same input relation as the separate-sum-check
+composition. With coefficient `1` on the folding term in both bounds, `Unrolled.concreteError`
+is lower by one sum-check term (`Unrolled.concreteError_add_eq`).
+`Unrolled.concreteErrorWithBlockSize` retains the coefficient `ϑ / (2^ϑ - 1)` of DP24's
+equation (42).
 For the generic packing ring switch,
 `RingSwitching.Packing.RingSwitch.perfectCompleteness_and_knowledgeSoundness` gives ordinary
 knowledge error `bat.error + m * (2/|C|)` through

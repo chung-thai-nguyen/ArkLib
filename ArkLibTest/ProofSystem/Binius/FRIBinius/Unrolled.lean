@@ -16,7 +16,10 @@ variables, one retained variable, the nonconstant source `X₀ + X₂` and its h
 
 * Both compositions are stated for the same input relation.
 * The honest source is accepted with probability one.
-* The unrolled bound is the separate-sum-check bound minus `2ℓ'/|L|`, and is below one.
+* At block size one the unrolled bound is the separate-sum-check bound minus `2ℓ'/|L|`
+  and is below one.
+* The block-size coefficient is one at block size one. At block size two the sharper bound is
+  strictly below the coarser bound and applies to knowledge soundness and soundness.
 * The Binary Basefold final check multiplies by the multiplier value: with a zero multiplier it
   still requires a zero target, and at `evalMultiplier` it is the `eq̃` check.
 -/
@@ -93,6 +96,14 @@ theorem concreteError_lt :
       (Binius.FRIBinius.Unrolled.concreteError 2 (L := Gf16) (ℓ' := 1) (R := 1) 8) hpos
     rw [hadd] at h
     exact_mod_cast h
+
+example :
+    Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize 2
+        (L := Gf16) (ℓ' := 1) (R := 1) (ϑ := 1) 8 =
+      Binius.FRIBinius.Unrolled.concreteError 2 (L := Gf16) (ℓ' := 1) (R := 1) 8 := by
+  have hsub : (2 : ℝ≥0) - 1 = 1 := tsub_eq_of_eq_add (by norm_num)
+  norm_num [Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize,
+    Binius.FRIBinius.Unrolled.concreteError, CoreInteraction.foldingBlockFactor, hsub]
 
 /-! ### The Binary Basefold final check -/
 
@@ -198,6 +209,41 @@ example :
       Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError, card_extension]
   · norm_num [Binius.FRIBinius.Unrolled.concreteError, card_extension]
 
+/-! ### Two folds per block -/
+
+local instance : Fact ((2 : ℕ) ∣ 2) := ⟨dvd_refl 2⟩
+
+private theorem twoFoldsRate : 2 + 1 < 2 ^ 2 := by decide
+private theorem twoFoldsDim : 4 = 2 + 2 := rfl
+private abbrev twoFoldsRelation :=
+  TensorPrefix.relIn profile twoFoldsDim
+    (Binius.FRIBinius.binaryBasefoldInput 2 L K basis 2 1 2 twoFoldsRate)
+private abbrev twoFoldsVerifier :=
+  Binius.FRIBinius.Unrolled.fullVerifier 2 K basis
+    (ℓ' := 2) (R := 1) (ϑ := 2) twoFoldsRate twoFoldsDim 8
+
+/-- Ordinary security at the sharper bound for two folds per block over a non-bit ground field. -/
+example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
+    let err := Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize 2
+      (L := L) (ℓ' := 2) (R := 1) (ϑ := 2) 8
+    OracleProof.knowledgeSoundness init impl twoFoldsRelation twoFoldsVerifier err ∧
+      OracleProof.soundness init impl twoFoldsRelation.language twoFoldsVerifier err :=
+  ⟨Binius.FRIBinius.Unrolled.fullVerifier_knowledgeSoundness_withBlockSize 2 K basis
+      twoFoldsRate twoFoldsDim 8 init impl,
+    Binius.FRIBinius.Unrolled.fullVerifier_soundness_withBlockSize 2 K basis
+      twoFoldsRate twoFoldsDim 8 init impl⟩
+
+example :
+    let err := Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize 2
+      (L := L) (ℓ' := 2) (R := 1) (ϑ := 2) 8
+    err = 6 / 256 + (2 / 3 : ℝ≥0) * (8 / 256) + (3 / 4 : ℝ≥0) ^ 8 ∧
+      err < Binius.FRIBinius.Unrolled.concreteError 2 (L := L) (ℓ' := 2) (R := 1) 8 ∧
+      err < 1 := by
+  have hsub : (4 : ℝ≥0) - 1 = 3 := tsub_eq_of_eq_add (by norm_num)
+  norm_num [Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize,
+    Binius.FRIBinius.Unrolled.concreteError, CoreInteraction.foldingBlockFactor, card_extension,
+    hsub]
+
 end ArkLibTest.FRIBinius.NonBitGroundField
 
 /--
@@ -227,3 +273,17 @@ info: 'Binius.FRIBinius.Unrolled.fullError_sum_le_concrete' depends on axioms:
 -/
 #guard_msgs (whitespace := lax) in
 #print axioms Binius.FRIBinius.Unrolled.fullError_sum_le_concrete
+
+/--
+info: 'Binius.FRIBinius.Unrolled.fullVerifier_knowledgeSoundness_withBlockSize' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+-/
+#guard_msgs (whitespace := lax) in
+#print axioms Binius.FRIBinius.Unrolled.fullVerifier_knowledgeSoundness_withBlockSize
+
+/--
+info: 'Binius.FRIBinius.Unrolled.fullVerifier_soundness_withBlockSize' depends on axioms:
+[propext, Classical.choice, Quot.sound]
+-/
+#guard_msgs (whitespace := lax) in
+#print axioms Binius.FRIBinius.Unrolled.fullVerifier_soundness_withBlockSize

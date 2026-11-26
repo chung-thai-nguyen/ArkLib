@@ -20,17 +20,14 @@ Sequential composition of:
 
 ## Error ledger
 
-The core-and-query challenge sum is bounded by
-`2ℓ/|L| + 2^(ℓ+𝓡)/|L| + (1/2 + 1/(2·2^𝓡))^γ`; it excludes ring-switching batching.
-This is the corresponding part of DP24 §5.2, equation (43). The middle term bounds the folding
-loss and the final term bounds repeated query acceptance. The exports prove perfect completeness
-on exact encodings and round-by-round knowledge soundness for
-unique-decoding-radius compatibility.
+`fullRbrKnowledgeError_sum_le_concreteWithBlockSize` bounds the core-and-query challenge sum by
+`2ℓ/|L| + (ϑ/(2^ϑ-1)) · 2^(ℓ+𝓡)/|L| + (1/2 + 1/(2·2^𝓡))^γ`, without ring-switching
+batching. `fullRbrKnowledgeError_sum_le_concrete` replaces the folding coefficient by `1`.
 
 ## References
 
 * [Diamond, B.E. and Posen, J., *Polylogarithmic proofs for multilinears over binary towers*][DP24]
-  Statement numbering follows the archived revision of [DP24].
+  The folding coefficient is from the concrete soundness bound in §5.2.
 * [Zeilberger, H., Chen, B. and Fisch, B., *BaseFold: Efficient Field-Agnostic Polynomial
   Commitment Schemes from Foldable Codes*][ZCF24]
 
@@ -229,12 +226,27 @@ noncomputable def concreteBinaryBasefoldKnowledgeError (L : Type) [Fintype L] (�
     + (2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0)
     + ((1 / 2 : ℝ≥0) + 1 / (2 * 2 ^ 𝓡)) ^ γ_rep
 
+/-- The core-and-query bound with the folding coefficient `ϑ / (2^ϑ - 1)`. -/
+noncomputable def concreteBinaryBasefoldKnowledgeErrorWithBlockSize
+    (L : Type) [Fintype L] (ℓ 𝓡 ϑ γ_rep : ℕ) : ℝ≥0 :=
+  2 * (ℓ : ℝ≥0) / (Fintype.card L : ℝ≥0)
+    + foldingBlockFactor ϑ * ((2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0))
+    + ((1 / 2 : ℝ≥0) + 1 / (2 * 2 ^ 𝓡)) ^ γ_rep
+
+theorem concreteBinaryBasefoldKnowledgeErrorWithBlockSize_le_concrete
+    (L : Type) [Fintype L] (ℓ 𝓡 ϑ γ_rep : ℕ) :
+    concreteBinaryBasefoldKnowledgeErrorWithBlockSize L ℓ 𝓡 ϑ γ_rep ≤
+      concreteBinaryBasefoldKnowledgeError L ℓ 𝓡 γ_rep := by
+  unfold concreteBinaryBasefoldKnowledgeErrorWithBlockSize concreteBinaryBasefoldKnowledgeError
+  exact add_le_add
+    (add_le_add le_rfl (mul_le_of_le_one_left zero_le (foldingBlockFactor_le_one ϑ))) le_rfl
+
 omit [DecidableEq 𝔽q] h_β₀_eq_1 [SampleableType L] in
-/-- The challenge-index RBR error sum is at most the core-and-query closed-form bound. -/
-theorem fullRbrKnowledgeError_sum_le_concrete :
+/-- The core-and-query challenge-error sum is at most the bound retaining the block size. -/
+theorem fullRbrKnowledgeError_sum_le_concreteWithBlockSize :
     (∑ i : (fullPSpec 𝔽q β γ_repetitions (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
         fullRbrKnowledgeError 𝔽q β γ_repetitions (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate) i)
-      ≤ concreteBinaryBasefoldKnowledgeError L ℓ 𝓡 γ_repetitions := by
+      ≤ concreteBinaryBasefoldKnowledgeErrorWithBlockSize L ℓ 𝓡 ϑ γ_repetitions := by
   classical
   have h_full :
       (∑ i : (fullPSpec 𝔽q β γ_repetitions (ϑ := ϑ)
@@ -277,7 +289,7 @@ theorem fullRbrKnowledgeError_sum_le_concrete :
         CoreInteraction.coreInteractionOracleRbrKnowledgeError 𝔽q β (ϑ := ϑ)
           (h_ℓ_add_R_rate := h_ℓ_add_R_rate) i)
       ≤ 2 * (ℓ : ℝ≥0) / (Fintype.card L : ℝ≥0)
-          + (2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0) := by
+          + foldingBlockFactor ϑ * ((2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0)) := by
     unfold CoreInteraction.coreInteractionOracleRbrKnowledgeError
     simp only [Function.comp_apply]
     rw [Equiv.sum_comp (Equiv.symm ChallengeIdx.sumEquiv)]
@@ -288,7 +300,7 @@ theorem fullRbrKnowledgeError_sum_le_concrete :
           CoreInteraction.finalSumcheckKnowledgeError (L := L) i) = 0 := by
       exact Finset.sum_eq_zero (fun i _ => nomatch i)
     rw [h_final, add_zero]
-    exact Binius.BinaryBasefold.CoreInteraction.sumcheckFoldKnowledgeError_le (L := L)
+    exact Binius.BinaryBasefold.CoreInteraction.sumcheckFoldKnowledgeError_le_geometric (L := L)
       (𝔽q := 𝔽q) (β := β) (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate) (ℓ := ℓ)
   have h_query :
       (∑ i : (pSpecQuery 𝔽q β γ_repetitions (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
@@ -296,17 +308,17 @@ theorem fullRbrKnowledgeError_sum_le_concrete :
       = ((1 / 2 : ℝ≥0) + 1 / (2 * 2 ^ 𝓡)) ^ γ_repetitions := by
     simp [QueryPhase.queryRbrKnowledgeError, QueryPhase.queryRbrKnowledgeErrorSingleRepetition,
       pSpecQuery, ChallengeIdx]
-  have h_mid :
-      (∑ i : (pSpecCoreInteraction 𝔽q β (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
-        CoreInteraction.coreInteractionOracleRbrKnowledgeError 𝔽q β (ϑ := ϑ)
-          (h_ℓ_add_R_rate := h_ℓ_add_R_rate) i)
-      +
-      (∑ i : (pSpecQuery 𝔽q β γ_repetitions (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
-        QueryPhase.queryRbrKnowledgeError 𝔽q β γ_repetitions (h_ℓ_add_R_rate := h_ℓ_add_R_rate) i)
-      ≤ concreteBinaryBasefoldKnowledgeError L ℓ 𝓡 γ_repetitions := by
-    rw [concreteBinaryBasefoldKnowledgeError, ← h_query]
-    exact add_le_add h_core_le (le_refl _)
-  exact h_mid
+  rw [h_query, concreteBinaryBasefoldKnowledgeErrorWithBlockSize]
+  exact add_le_add h_core_le le_rfl
+
+omit [DecidableEq 𝔽q] h_β₀_eq_1 [SampleableType L] in
+/-- The core-and-query challenge-error sum is at most the bound that omits the block size. -/
+theorem fullRbrKnowledgeError_sum_le_concrete :
+    (∑ i : (fullPSpec 𝔽q β γ_repetitions (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
+        fullRbrKnowledgeError 𝔽q β γ_repetitions (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate) i)
+      ≤ concreteBinaryBasefoldKnowledgeError L ℓ 𝓡 γ_repetitions :=
+  (fullRbrKnowledgeError_sum_le_concreteWithBlockSize 𝔽q β γ_repetitions).trans
+    (concreteBinaryBasefoldKnowledgeErrorWithBlockSize_le_concrete L ℓ 𝓡 ϑ γ_repetitions)
 
 /-- Ordinary knowledge soundness of full Binary Basefold, with the sum of its challenge errors. -/
 theorem fullOracleVerifier_knowledgeSoundness :

@@ -881,7 +881,8 @@ home_page/            site assets and assembled website root
   prefix reduction with Binary Basefold opening. `FRIBinius/Unrolled/` is DP24 Construction 5.1:
   the tensor batching head (`TensorPrefix.headVerifier`) followed by `ProductClaim.openingVerifier`
   at the ring-switching multiplier, so a single sum-check serves both ring switching and folding.
-  `Spec` bounds its challenge errors by DP24 equation (43). See the
+  `Spec` bounds the sum of its challenge errors by DP24 equation (42) on the common parameters
+  (14 May 2026 full version). See the
   [consumer guide](ring-switching-consumers.md).
 
 - The ABF26 Section 6 toy IOP lives under `ProofSystem/ToyProblem/`. `Spec/` contains the

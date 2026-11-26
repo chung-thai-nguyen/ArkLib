@@ -34,17 +34,16 @@ sends the constant `c := f⁽ˡ⁾(0, …, 0)` and the verifier checks `s_ℓ = 
   knowledge soundness from the round relation at round `0` to the final sum-check output
   relation, with error `coreInteractionOracleRbrKnowledgeError`; guarded by the checks of the
   sum-check-and-fold rounds (`sumcheckFoldOracleVerifierGuardedForm`).
-* `sumcheckFoldKnowledgeError_le`: the per-challenge errors of the sum-check-and-fold rounds sum
-  to at most `2ℓ / |L| + 2^(ℓ + 𝓡) / |L|`. Each challenge carries the Schwartz–Zippel term
-  `2 / |L|` and the fold bad-event term `|S⁽ᵏ⁾| / |L|` of its round, `k` the end of its block; the
-  bad-event terms add up to `(ϑ / |L|) · (|S⁽ᶿ⁾| + |S⁽²ᶿ⁾| + ⋯ + |S⁽ˡ⁾|)`, which the geometric
-  series bounds by `2^(ℓ + 𝓡) / |L|`.
+* `sumcheckFoldKnowledgeError_le_geometric`: the challenge errors sum to at most
+  `2ℓ / |L| + (ϑ / (2^ϑ - 1)) · 2^(ℓ + 𝓡) / |L|`. Each challenge pays `2 / |L|`
+  for sumcheck and `|S⁽ᵏ⁾| / |L|` for folding, where `k` is the end of its block.
+  `sumcheckFoldKnowledgeError_le` uses the simpler coefficient `1` for the folding term.
 
 ## References
 
 * [Diamond, B.E. and Posen, J., *Polylogarithmic proofs for multilinears over binary towers*][DP24]
   The core interaction is steps 1–3 of the evaluation IOP of Construction 4.12. The bad-event part
-  of `sumcheckFoldKnowledgeError_le` is the computation in the proof of Proposition 4.23.
+  of `sumcheckFoldKnowledgeError_le_geometric` uses the geometric sum in Proposition 4.23.
 -/
 
 @[expose] public section
@@ -266,13 +265,21 @@ private lemma sum_nonLastBlocksRbrKnowledgeError :
       (h_ℓ_add_R_rate := h_ℓ_add_R_rate))).trans
     (Finset.sum_congr rfl fun bIdx _ => sum_nonLastSingleBlockRbrKnowledgeError 𝔽q β bIdx)
 
-/-- The fold bad-event terms of `B` blocks of `ϑ` rounds, ending at `ϑ, 2ϑ, …, Bϑ`, sum to at most
-`2^(Bϑ + R)`: `ϑ · ∑_{b < B} 2^(Bϑ + R - (b + 1)ϑ) = 2^R · ϑ · ∑_{u < B} (2^ϑ)^u`, and
-`ϑ ≤ 2^ϑ - 1` turns the geometric sum into at most `2^(Bϑ) - 1`. -/
-private lemma mul_sum_two_pow_sub_le (B ϑ R : ℕ) :
-    ϑ * ∑ b ∈ range B, 2 ^ (B * ϑ + R - (b * ϑ + ϑ)) ≤ 2 ^ (B * ϑ + R) := by
+/-- The geometric-series coefficient `ϑ / (2^ϑ - 1)` in the aggregate folding bound. -/
+def foldingBlockFactor (ϑ : ℕ) : ℝ≥0 :=
+  (ϑ : ℝ≥0) / ((2 : ℝ≥0) ^ ϑ - 1)
+
+theorem foldingBlockFactor_le_one (ϑ : ℕ) : foldingBlockFactor ϑ ≤ 1 := by
+  have h : (ϑ : ℝ≥0) + 1 ≤ 2 ^ ϑ := by
+    exact_mod_cast Nat.succ_le_of_lt (Nat.lt_two_pow_self (n := ϑ))
+  exact div_le_one_of_le₀ (le_tsub_of_add_le_right h) zero_le
+
+/-- The sizes of the block-end domains form a geometric series with ratio `2^ϑ` in reverse order. -/
+private lemma sum_two_pow_sub_le (B ϑ R : ℕ) [NeZero ϑ] :
+    (∑ b ∈ range B, (2 : ℝ≥0) ^ (B * ϑ + R - (b * ϑ + ϑ))) ≤
+      (2 : ℝ≥0) ^ (B * ϑ + R) / ((2 : ℝ≥0) ^ ϑ - 1) := by
   have hterm (b : ℕ) (hb : b ∈ range B) :
-      2 ^ (B * ϑ + R - (b * ϑ + ϑ)) = 2 ^ R * (2 ^ ϑ) ^ (B - 1 - b) := by
+      (2 : ℝ≥0) ^ (B * ϑ + R - (b * ϑ + ϑ)) = 2 ^ R * (2 ^ ϑ) ^ (B - 1 - b) := by
     rw [mem_range] at hb
     rw [← pow_mul, ← pow_add]
     congr 1
@@ -283,27 +290,22 @@ private lemma mul_sum_two_pow_sub_le (B ϑ R : ℕ) :
     rw [mul_comm ϑ]
     omega
   rw [sum_congr rfl hterm, ← mul_sum, sum_range_reflect (fun u => (2 ^ ϑ) ^ u) B]
-  have hgeom := geom_sum_mul_add (2 ^ ϑ - 1) B
-  rw [Nat.sub_add_cancel Nat.one_le_two_pow, ← pow_mul, mul_comm ϑ B] at hgeom
-  calc ϑ * (2 ^ R * ∑ u ∈ range B, (2 ^ ϑ) ^ u)
-      = 2 ^ R * ((∑ u ∈ range B, (2 ^ ϑ) ^ u) * ϑ) := by ring
-    _ ≤ 2 ^ R * ((∑ u ∈ range B, (2 ^ ϑ) ^ u) * (2 ^ ϑ - 1)) :=
-        Nat.mul_le_mul_left _ (Nat.mul_le_mul_left _ (Nat.le_sub_one_of_lt Nat.lt_two_pow_self))
-    _ ≤ 2 ^ R * 2 ^ (B * ϑ) := Nat.mul_le_mul_left _ (by omega)
-    _ = 2 ^ (B * ϑ + R) := by rw [← pow_add, add_comm]
+  have hbase : (1 : ℝ≥0) < 2 ^ ϑ := one_lt_pow₀ (by norm_num) (NeZero.ne ϑ)
+  have hgeom := geom_sum_mul_add ((2 : ℝ≥0) ^ ϑ - 1) B
+  rw [tsub_add_cancel_of_le hbase.le, ← pow_mul, mul_comm ϑ B] at hgeom
+  rw [le_div_iff₀ (tsub_pos_of_lt hbase), mul_assoc, add_comm (B * ϑ) R, pow_add]
+  gcongr
+  rw [← hgeom]
+  exact le_self_add
 
 omit [DecidableEq 𝔽q] h_β₀_eq_1 [SampleableType L] in
-/-- The total round-by-round knowledge error of the sum-check-and-fold rounds is at most
-`2ℓ / |L| + 2^(ℓ + 𝓡) / |L|`. Each of the `ℓ` challenges carries the Schwartz–Zippel term
-`2 / |L|` and the fold bad-event term `|S⁽ᵏ⁾| / |L| = 2^(ℓ + 𝓡 - k) / |L|`, `k` the end of its
-block. The `ϑ` challenges of a block share `k`, so the bad-event terms add up to
-`(ϑ / |L|) · (|S⁽ᶿ⁾| + ⋯ + |S⁽ˡ⁾|)`, which the geometric series bounds by `2^(ℓ + 𝓡) / |L|`. The
-per-challenge errors may sum to strictly less. -/
-theorem sumcheckFoldKnowledgeError_le :
+/-- The challenge-error sum retains the geometric-series coefficient `ϑ / (2^ϑ - 1)`
+on the folding term. -/
+theorem sumcheckFoldKnowledgeError_le_geometric :
     (∑ j : (pSpecSumcheckFold 𝔽q β (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
         sumcheckFoldKnowledgeError (L := L) 𝔽q β j)
       ≤ 2 * (ℓ : ℝ≥0) / (Fintype.card L : ℝ≥0)
-        + (2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0) := by
+        + foldingBlockFactor ϑ * ((2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0)) := by
   have hB : ℓ / ϑ * ϑ = ℓ := Nat.div_mul_cancel hdiv.out
   have hB1 : 1 ≤ ℓ / ϑ :=
     Nat.div_pos (blockSize_le_rounds ℓ ϑ) (Nat.pos_of_neZero ϑ)
@@ -324,15 +326,28 @@ theorem sumcheckFoldKnowledgeError_le :
     refine Finset.sum_congr rfl fun b _ => ?_
     push_cast
     ring
-  have hbound : ∑ b ∈ range (ℓ / ϑ), (2 * ϑ + ϑ * 2 ^ (ℓ + 𝓡 - (b * ϑ + ϑ))) ≤
-      2 * ℓ + 2 ^ (ℓ + 𝓡) := by
-    have h := mul_sum_two_pow_sub_le (ℓ / ϑ) ϑ 𝓡
-    rw [hB, Finset.mul_sum] at h
-    rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, smul_eq_mul]
-    linarith
-  rw [hnum, ← add_div]
-  gcongr
-  exact_mod_cast hbound
+  have hrounds : (↑(ℓ / ϑ) : ℝ≥0) * ϑ = ℓ := by exact_mod_cast hB
+  have hfold := sum_two_pow_sub_le (ℓ / ϑ) ϑ 𝓡
+  rw [hB] at hfold
+  rw [hnum, ← mul_div_assoc, ← add_div]
+  push_cast
+  rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
+    ← Finset.mul_sum]
+  apply div_le_div_of_nonneg_right _ zero_le
+  refine add_le_add ?_ ?_
+  · rw [mul_left_comm, hrounds]
+  · simpa only [foldingBlockFactor, div_mul_eq_mul_div, ← mul_div_assoc] using
+      mul_le_mul_of_nonneg_left hfold (show 0 ≤ (ϑ : ℝ≥0) from zero_le)
+
+omit [DecidableEq 𝔽q] h_β₀_eq_1 [SampleableType L] in
+/-- The challenge-error sum is at most `2ℓ / |L| + 2^(ℓ + 𝓡) / |L|`. -/
+theorem sumcheckFoldKnowledgeError_le :
+    (∑ j : (pSpecSumcheckFold 𝔽q β (ϑ := ϑ) (h_ℓ_add_R_rate := h_ℓ_add_R_rate)).ChallengeIdx,
+        sumcheckFoldKnowledgeError (L := L) 𝔽q β j)
+      ≤ 2 * (ℓ : ℝ≥0) / (Fintype.card L : ℝ≥0)
+        + (2 ^ (ℓ + 𝓡) : ℝ≥0) / (Fintype.card L : ℝ≥0) :=
+  (sumcheckFoldKnowledgeError_le_geometric 𝔽q β).trans <|
+    add_le_add le_rfl (mul_le_of_le_one_left zero_le (foldingBlockFactor_le_one ϑ))
 
 omit [DecidableEq 𝔽q] in
 /-- Ordinary knowledge soundness of the core interaction, with the sum of its challenge errors. -/

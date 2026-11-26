@@ -39,14 +39,14 @@ exact encoding.
   hence equivalent to relation soundness (`Verifier.knowledgeSoundness_iff_relationSoundness`).
 * `fullVerifier_soundness` is soundness for the language of the input relation.
 
-Knowledge soundness and soundness use `concreteError`, which bounds the sum of `fullError`
-(`fullError_sum_le_concrete`). No efficient-extraction or running-time claim is made.
+The `withBlockSize` versions use `concreteErrorWithBlockSize`, which bounds the sum of `fullError`
+with the block-size coefficient (`fullError_sum_le_concreteWithBlockSize`). The coarser
+`concreteError` replaces the coefficient by `1`. These statements do not verify extraction time.
 
-The field `K` has two elements, so DP24's degree `r` of `L` over `𝔽₂` is the basis size `2^κ`.
-Construction 5.1 allows any binary `K` and asks for `r ≥ ℓ + R`; the rate condition here is
-`ℓ' + R < 2^κ`. It uses `ℓ'` because only the packed polynomial is encoded, and it is strict as
-in all Binary Basefold statements (`docs/kb/papers/DP24.md`, known divergences).
-The same basis `β`, with `β 0 = 1`, packs the source polynomial and defines the additive NTT.
+`L` and `K` have characteristic two. The rate condition here is `ℓ' + R < 2^κ`, where `2^κ`
+is the number of packing basis vectors and `ℓ'` is the number of packed variables.
+Construction 5.1 instead asks for `r ≥ ℓ + R`, with `r = [L : 𝔽₂]`. The packing basis `β`,
+with `β 0 = 1`, also supplies the additive-domain vectors by restriction of scalars to `𝔽₂`.
 
 ## Computability
 
@@ -181,22 +181,49 @@ theorem fullVerifier_rbrKnowledgeSoundness (γ : ℕ) {σ : Type}
 
 /-! ### Knowledge soundness and soundness -/
 
-/-- Knowledge soundness at `concreteError`, with an unbounded extractor; equivalently relation
-soundness (`Verifier.knowledgeSoundness_iff_relationSoundness`). -/
+/-- Knowledge soundness with the error bound retaining the folding block size. -/
+theorem fullVerifier_knowledgeSoundness_withBlockSize (γ : ℕ) {σ : Type}
+    (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
+    OracleProof.knowledgeSoundness init impl
+      (TensorPrefix.relIn (biniusProfile κ L K β) h_l
+        (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate))
+      (fullVerifier κ K β (ϑ := ϑ) h_rate h_l γ)
+      (concreteErrorWithBlockSize κ (L := L) (ℓ' := ℓ') (R := R) (ϑ := ϑ) γ) := by
+  apply Verifier.knowledgeSoundness_error_mono init impl
+    (fullError_sum_le_concreteWithBlockSize κ K β (ϑ := ϑ) h_rate γ)
+  exact Verifier.GuardedForm.knowledgeSoundness_of_rbrKnowledgeSoundness
+    (Verifier.GuardedForm.ofEmpty _ (fun _ => (false, fun i : Empty => nomatch i)))
+    (fullVerifier_rbrKnowledgeSoundness κ K β (ϑ := ϑ) h_rate h_l γ init impl)
+
+/-- Soundness for the language of the input relation with the error bound retaining the folding
+block size. -/
+theorem fullVerifier_soundness_withBlockSize (γ : ℕ) {σ : Type}
+    (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
+    OracleProof.soundness init impl
+      (TensorPrefix.relIn (biniusProfile κ L K β) h_l
+        (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate)).language
+      (fullVerifier κ K β (ϑ := ϑ) h_rate h_l γ)
+      (concreteErrorWithBlockSize κ (L := L) (ℓ' := ℓ') (R := R) (ϑ := ϑ) γ) :=
+  Verifier.soundness_error_mono init impl
+    (by exact_mod_cast fullError_sum_le_concreteWithBlockSize κ K β (ϑ := ϑ) h_rate γ)
+    (Verifier.GuardedForm.soundness_of_rbrSoundness
+      (Verifier.GuardedForm.ofEmpty _ (fun _ => (false, fun i => nomatch i)))
+      (Verifier.rbrSoundness_of_rbrKnowledgeSoundness
+        (fullVerifier_rbrKnowledgeSoundness κ K β (ϑ := ϑ) h_rate h_l γ init impl)))
+
+/-- Knowledge soundness with the coarser bound `concreteError`. -/
 theorem fullVerifier_knowledgeSoundness (γ : ℕ) {σ : Type}
     (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     OracleProof.knowledgeSoundness init impl
       (TensorPrefix.relIn (biniusProfile κ L K β) h_l
         (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate))
       (fullVerifier κ K β (ϑ := ϑ) h_rate h_l γ)
-      (concreteError κ (L := L) (ℓ' := ℓ') (R := R) γ) := by
-  apply Verifier.knowledgeSoundness_error_mono init impl
-    (fullError_sum_le_concrete κ K β (ϑ := ϑ) h_rate γ)
-  exact Verifier.GuardedForm.knowledgeSoundness_of_rbrKnowledgeSoundness
-    (Verifier.GuardedForm.ofEmpty _ (fun _ => (false, fun i : Empty => nomatch i)))
-    (fullVerifier_rbrKnowledgeSoundness κ K β (ϑ := ϑ) h_rate h_l γ init impl)
+      (concreteError κ (L := L) (ℓ' := ℓ') (R := R) γ) :=
+  Verifier.knowledgeSoundness_error_mono init impl
+    (concreteErrorWithBlockSize_le_concrete κ (L := L) (ℓ' := ℓ') (R := R) (ϑ := ϑ) γ)
+    (fullVerifier_knowledgeSoundness_withBlockSize κ K β (ϑ := ϑ) h_rate h_l γ init impl)
 
-/-- Soundness at `concreteError` for the language of the input relation. -/
+/-- Soundness for the language of the input relation with the coarser bound `concreteError`. -/
 theorem fullVerifier_soundness (γ : ℕ) {σ : Type}
     (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     OracleProof.soundness init impl
@@ -205,11 +232,8 @@ theorem fullVerifier_soundness (γ : ℕ) {σ : Type}
       (fullVerifier κ K β (ϑ := ϑ) h_rate h_l γ)
       (concreteError κ (L := L) (ℓ' := ℓ') (R := R) γ) :=
   Verifier.soundness_error_mono init impl
-    (by exact_mod_cast fullError_sum_le_concrete κ K β (ϑ := ϑ) h_rate γ)
-    (Verifier.GuardedForm.soundness_of_rbrSoundness
-      (Verifier.GuardedForm.ofEmpty _ (fun _ => (false, fun i => nomatch i)))
-      (Verifier.rbrSoundness_of_rbrKnowledgeSoundness
-        (fullVerifier_rbrKnowledgeSoundness κ K β (ϑ := ϑ) h_rate h_l γ init impl)))
+    (concreteErrorWithBlockSize_le_concrete κ (L := L) (ℓ' := ℓ') (R := R) (ϑ := ϑ) γ)
+    (fullVerifier_soundness_withBlockSize κ K β (ϑ := ϑ) h_rate h_l γ init impl)
 
 /-! ### Perfect completeness -/
 

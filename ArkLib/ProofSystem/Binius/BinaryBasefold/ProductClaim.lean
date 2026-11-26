@@ -249,21 +249,37 @@ noncomputable def openingError (γ : ℕ)
 
 /-! ## Security -/
 
-omit [SampleableType L] [DecidableEq K] [Fact (β 0 = 1)] in
-/-- The opening's challenge-error sum is at most the Binary Basefold bound. -/
-theorem openingError_sum_le_concrete (γ : ℕ) :
-    (∑ j, openingError K β γ (ϑ := ϑ) (h_rate := h_rate) j) ≤
-      FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError L ℓ R γ := by
+omit [SampleableType L] [DecidableEq K] [Fact (β 0 = 1)] [Fact (Fintype.card K = 2)] [NeZero R] in
+private theorem openingError_sum (γ : ℕ) :
+    (∑ j, openingError K β γ (ϑ := ϑ) (h_rate := h_rate) j) =
+      ∑ j, FullBinaryBasefold.fullRbrKnowledgeError K β γ (ϑ := ϑ)
+        (h_ℓ_add_R_rate := h_rate) j := by
   classical
   let f : ((!p[] : ProtocolSpec 0).ChallengeIdx ⊕
       (fullPSpec K β γ (ϑ := ϑ) (h_ℓ_add_R_rate := h_rate)).ChallengeIdx) → ℝ≥0 :=
     Sum.elim (fun _ => 0)
       (FullBinaryBasefold.fullRbrKnowledgeError K β γ (ϑ := ϑ)
         (h_ℓ_add_R_rate := h_rate))
-  change (∑ j, f (ChallengeIdx.sumEquiv.symm j)) ≤ _
+  change (∑ j, f (ChallengeIdx.sumEquiv.symm j)) = _
   rw [Equiv.sum_comp (e := ChallengeIdx.sumEquiv.symm) (g := f), Fintype.sum_sum_type]
   simp only [f, Sum.elim_inl, Sum.elim_inr, Finset.sum_const_zero, zero_add]
+
+omit [SampleableType L] [DecidableEq K] [Fact (β 0 = 1)] in
+/-- The opening's challenge-error sum is at most the Binary Basefold bound. -/
+theorem openingError_sum_le_concrete (γ : ℕ) :
+    (∑ j, openingError K β γ (ϑ := ϑ) (h_rate := h_rate) j) ≤
+      FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError L ℓ R γ := by
+  rw [openingError_sum]
   exact FullBinaryBasefold.fullRbrKnowledgeError_sum_le_concrete K β γ
+
+omit [SampleableType L] [DecidableEq K] [Fact (β 0 = 1)] in
+/-- The opening's challenge-error sum satisfies the Binary Basefold bound that retains the
+folding block size. -/
+theorem openingError_sum_le_concreteWithBlockSize (γ : ℕ) :
+    (∑ j, openingError K β γ (ϑ := ϑ) (h_rate := h_rate) j) ≤
+      FullBinaryBasefold.concreteBinaryBasefoldKnowledgeErrorWithBlockSize L ℓ R ϑ γ := by
+  rw [openingError_sum]
+  exact FullBinaryBasefold.fullRbrKnowledgeError_sum_le_concreteWithBlockSize K β γ
 
 variable (relIn : Set ((StmtIn × (∀ j, OracleStatement K β (ϑ := ϑ)
     (h_ℓ_add_R_rate := h_rate) 0 j)) × WitIn))
