@@ -53,7 +53,7 @@ local instance : Fact (Nat.Prime (ringChar (ZMod 2))) :=
   ⟨CharP.prime_ringChar (ZMod 2)⟩
 
 abbrev profile := Binius.FRIBinius.biniusProfile 2 Gf16 (ZMod 2) basis
-abbrev interface := Binius.FRIBinius.RingSwitch.inputInterface 2 (ZMod 2) basis
+abbrev interface := Binius.FRIBinius.RingSwitch.inputInterface basis
   (ℓ' := 1) (R := 1) (ϑ := 1) (by decide)
 
 def source : MultilinearPoly (ZMod 2) 3 :=
@@ -69,30 +69,30 @@ def point : Fin 3 → Gf16 := ![0, 0, 1]
 
 example : aeval point source.val = (1 : Gf16) := by simp [point, source]
 def packed := packMLE 2 Gf16 (ZMod 2) 3 1 rfl profile.basis source
-def honestOracle := Binius.FRIBinius.honestPackedOracle 2 Gf16 (ZMod 2) basis
+def honestOracle := Binius.FRIBinius.honestPackedOracle Gf16 basis
   1 1 1 (by decide) packed
 
 theorem honest_input_actual :
     (((point, aeval point source.val), honestOracle), source) ∈
       TensorPrefix.relIn profile rfl interface.strictView :=
-  Binius.FRIBinius.Conformance.mem_relIn_strictView_honestPackedOracle 2 (ZMod 2) basis
+  Binius.FRIBinius.Conformance.mem_relIn_strictView_honestPackedOracle 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) rfl source point
 
 example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :=
-  Binius.FRIBinius.RingSwitch.fullReduction_perfectCompleteness 2 (ZMod 2) basis
+  Binius.FRIBinius.RingSwitch.fullReduction_perfectCompleteness 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8 init impl
 
 example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :=
-  Binius.FRIBinius.RingSwitch.fullVerifier_rbrKnowledgeSoundness 2 (ZMod 2) basis
+  Binius.FRIBinius.RingSwitch.fullVerifier_rbrKnowledgeSoundness 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8 init impl
 
 /-- The composite accepts its nonconstant honest source with probability one. -/
 theorem honest_probability {σ : Type} (init : ProbComp σ)
     (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     let R := OracleReduction.toReduction (Oₛₒ := fun i : Empty => nomatch i)
-      (Binius.FRIBinius.RingSwitch.fullReduction 2 (ZMod 2) basis
+      (Binius.FRIBinius.RingSwitch.fullReduction 2 (ZMod 2) basis basis
         (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8)
-    let pSpec := Binius.FRIBinius.RingSwitch.pSpec 2 (ZMod 2) basis
+    let pSpec := Binius.FRIBinius.RingSwitch.pSpec 2 (ZMod 2) basis basis
       (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) 8
     let pImpl : QueryImpl ([]ₒ + [pSpec.Challenge]ₒ'challengeOracleInterface)
       (StateT σ ProbComp) := QueryImpl.addLift impl challengeQueryImpl
@@ -100,21 +100,21 @@ theorem honest_probability {σ : Type} (init : ProbComp σ)
       let st ← init
       (simulateQ pImpl (R.run ((point, aeval point source.val), honestOracle) source).run).run' st}[
         (out.2, out.1.2.2) ∈ acceptRejectOracleRel ∧ out.1.2.1 = out.2] = 1 := by
-  have h := Binius.FRIBinius.RingSwitch.fullReduction_perfectCompleteness 2 (ZMod 2) basis
+  have h := Binius.FRIBinius.RingSwitch.fullReduction_perfectCompleteness 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8 init impl
   change Reduction.perfectCompleteness init impl
     (TensorPrefix.relIn profile rfl interface.strictView)
     acceptRejectOracleRel (OracleReduction.toReduction (Oₛₒ := fun i : Empty => nomatch i)
-      (Binius.FRIBinius.RingSwitch.fullReduction 2 (ZMod 2) basis
+      (Binius.FRIBinius.RingSwitch.fullReduction 2 (ZMod 2) basis basis
         (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8)) at h
   rw [Reduction.perfectCompleteness_eq_prob_one] at h
   exact h ((point, aeval point source.val), honestOracle) source honest_input_actual
 
 /-- The bound concerns the full challenge-index sum, including the opening. -/
 theorem full_error_sum_lt_one :
-    (∑ j, Binius.FRIBinius.RingSwitch.fullError 2 (ZMod 2) basis
+    (∑ j, Binius.FRIBinius.RingSwitch.fullError 2 (ZMod 2) basis basis
       (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) 8 j) < 1 := by
-  apply lt_of_le_of_lt (Binius.FRIBinius.RingSwitch.fullError_sum_le 2 (ZMod 2) basis
+  apply lt_of_le_of_lt (Binius.FRIBinius.RingSwitch.fullError_sum_le 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) 8)
   norm_num [Binius.FRIBinius.RingSwitch.concreteError,
     Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError, card_gf16]

@@ -38,23 +38,24 @@ open OracleSpec OracleComp ProtocolSpec Module
 open RingSwitching RingSwitching.Packing
 open scoped NNReal Binius.FRIBinius
 
-variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [SampleableType L] [CharP L 2]
+variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [SampleableType L]
 variable (K : Type) [Field K] [Algebra K L]
 variable (β : Basis (Fin (2 ^ κ)) K L)
+variable [Algebra (ZMod 2) L] {r : ℕ} [NeZero r] (b : Basis (Fin r) (ZMod 2) L)
 variable {ℓ' R ϑ : ℕ} [NeZero ℓ'] [NeZero R] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
-variable (h_rate : ℓ' + R < 2 ^ κ)
+variable (h_rate : ℓ' + R < r)
 
 /-- The batching head followed by the Binary Basefold opening wire. -/
 noncomputable abbrev pSpec (γ : ℕ) :=
   TensorPrefix.headPSpec (biniusProfile κ L K β) ++ₚ
-    ((!p[] : ProtocolSpec 0) ++ₚ BinaryBasefold.fullPSpec (ZMod 2) β γ
+    ((!p[] : ProtocolSpec 0) ++ₚ BinaryBasefold.fullPSpec (ZMod 2) b γ
       (ϑ := ϑ) (h_ℓ_add_R_rate := h_rate))
 
 /-- The batching loss on the head's challenge, then the errors of the Binary Basefold opening. -/
 noncomputable def fullError (γ : ℕ) :
-    (pSpec κ K β (ϑ := ϑ) h_rate γ).ChallengeIdx → ℝ≥0 :=
+    (pSpec κ K β b (ϑ := ϑ) h_rate γ).ChallengeIdx → ℝ≥0 :=
   Sum.elim (TensorPrefix.headRbrError (biniusProfile κ L K β))
-    (BinaryBasefold.ProductClaim.openingError (ZMod 2) β γ (ϑ := ϑ) (h_rate := h_rate)) ∘
+    (BinaryBasefold.ProductClaim.openingError (ZMod 2) b γ (ϑ := ϑ) (h_rate := h_rate)) ∘
     ChallengeIdx.sumEquiv.symm
 
 /-- The closed-form bound with one sum-check term `2ℓ'/|L|`. -/
@@ -115,9 +116,9 @@ theorem concreteError_add_eq (γ : ℕ) :
 omit [NeZero R] in
 /-- The challenge-error sum is the batching loss plus the opening's sum. -/
 theorem fullError_sum (γ : ℕ) :
-    (∑ i, fullError κ K β (ϑ := ϑ) h_rate γ i) =
+    (∑ i, fullError κ K β b (ϑ := ϑ) h_rate γ i) =
       (κ : ℝ≥0) / Fintype.card L +
-        ∑ i, BinaryBasefold.ProductClaim.openingError (ZMod 2) β γ
+        ∑ i, BinaryBasefold.ProductClaim.openingError (ZMod 2) b γ
           (ϑ := ϑ) (h_rate := h_rate) i := by
   unfold fullError
   refine (Equiv.sum_comp ChallengeIdx.sumEquiv.symm (Sum.elim _ _)).trans ?_
@@ -127,18 +128,18 @@ theorem fullError_sum (γ : ℕ) :
 
 /-- The challenge-error sum is at most the bound retaining the folding block size. -/
 theorem fullError_sum_le_concreteWithBlockSize (γ : ℕ) :
-    (∑ i, fullError κ K β (ϑ := ϑ) h_rate γ i) ≤
+    (∑ i, fullError κ K β b (ϑ := ϑ) h_rate γ i) ≤
       concreteErrorWithBlockSize κ (L := L) (ℓ' := ℓ') (R := R) (ϑ := ϑ) γ := by
   rw [fullError_sum, concreteErrorWithBlockSize_eq]
   exact add_le_add_right
-    (BinaryBasefold.ProductClaim.openingError_sum_le_concreteWithBlockSize (ZMod 2) β γ
+    (BinaryBasefold.ProductClaim.openingError_sum_le_concreteWithBlockSize (ZMod 2) b γ
       (ϑ := ϑ) (h_rate := h_rate)) _
 
 /-- The challenge-error sum is at most `concreteError`. -/
 theorem fullError_sum_le_concrete (γ : ℕ) :
-    (∑ i, fullError κ K β (ϑ := ϑ) h_rate γ i) ≤
+    (∑ i, fullError κ K β b (ϑ := ϑ) h_rate γ i) ≤
       concreteError κ (L := L) (ℓ' := ℓ') (R := R) γ :=
-  (fullError_sum_le_concreteWithBlockSize κ K β (ϑ := ϑ) h_rate γ).trans
+  (fullError_sum_le_concreteWithBlockSize κ K β b (ϑ := ϑ) h_rate γ).trans
     (concreteErrorWithBlockSize_le_concrete κ (ϑ := ϑ) γ)
 
 end Binius.FRIBinius.Unrolled

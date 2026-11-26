@@ -94,34 +94,35 @@ open scoped Binius.FRIBinius
 
 variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [SampleableType L]
   [CharP L 2]
-  (K : Type) [Field K] [Algebra K L] (β : Module.Basis (Fin (2 ^ κ)) K L) [Fact (β 0 = 1)]
+  (K : Type) [Field K] [Algebra K L] (β : Module.Basis (Fin (2 ^ κ)) K L)
+  {r : ℕ} [NeZero r] (b : Module.Basis (Fin r) (ZMod 2) L) [Fact (b 0 = 1)]
   {ℓ ℓ' R ϑ : ℕ} [NeZero ℓ'] [NeZero R] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
-  (h_rate : ℓ' + R < 2 ^ κ) (h_dim : ℓ = ℓ' + κ)
+  (h_rate : ℓ' + R < r) (h_dim : ℓ = ℓ' + κ)
 
 example (γ : ℕ) {σ : Type} (init : ProbComp σ)
     (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     OracleProof.perfectCompleteness
-        (oracleProof := fullReduction κ K β (ϑ := ϑ) h_rate h_dim γ)
+        (oracleProof := fullReduction κ K β b (ϑ := ϑ) h_rate h_dim γ)
         (relation := TensorPrefix.relIn (biniusProfile κ L K β) h_dim
-          (inputInterface κ K β (ϑ := ϑ) h_rate).strictView) (init := init) (impl := impl) ∧
+          (inputInterface b (ϑ := ϑ) h_rate).strictView) (init := init) (impl := impl) ∧
       OracleProof.knowledgeSoundness init impl
         (TensorPrefix.relIn (biniusProfile κ L K β) h_dim
-          (inputInterface κ K β (ϑ := ϑ) h_rate))
-        (fullVerifier κ K β (ϑ := ϑ) h_rate h_dim γ)
+          (inputInterface b (ϑ := ϑ) h_rate))
+        (fullVerifier κ K β b (ϑ := ϑ) h_rate h_dim γ)
         -- Spelled out on purpose: `RingSwitch.concreteError` must unfold to this bound.
         ((κ : ℝ≥0) / Fintype.card L + (ℓ' : ℝ≥0) * (2 / Fintype.card L) +
           Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError L ℓ' R γ) :=
-  fullReduction_perfectCompleteness_and_knowledgeSoundness κ K β h_rate h_dim γ init impl
+  fullReduction_perfectCompleteness_and_knowledgeSoundness κ K β b h_rate h_dim γ init impl
 
 example (Context : Type) (γ : ℕ) {σ : Type} (init : ProbComp σ)
     (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     OracleProof.knowledgeSoundness init impl
-      (Binius.BinaryBasefold.Opening.contextualInputRelation (ZMod 2) β Context
+      (Binius.BinaryBasefold.Opening.contextualInputRelation (ZMod 2) b Context
         (ϑ := ϑ) (h_rate := h_rate))
-      (Binius.BinaryBasefold.Opening.contextualVerifier (ZMod 2) β Context γ
+      (Binius.BinaryBasefold.Opening.contextualVerifier (ZMod 2) b Context γ
         (ϑ := ϑ) (h_rate := h_rate))
       (Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError L ℓ' R γ) :=
-  Binius.BinaryBasefold.Opening.contextualVerifier_knowledgeSoundness (ZMod 2) β Context γ init impl
+  Binius.BinaryBasefold.Opening.contextualVerifier_knowledgeSoundness (ZMod 2) b Context γ init impl
 end FullFRIBinius
 
 end ArkLibTest.Binius.OrdinaryKnowledgeSoundness

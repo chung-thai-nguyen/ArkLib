@@ -23,36 +23,37 @@ namespace Binius.FRIBinius.Conformance
 open Module MvPolynomial RingSwitching RingSwitching.Packing Sumcheck.Structured
 open scoped Binius.FRIBinius
 
-variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L] [CharP L 2]
+variable (κ : ℕ) {L : Type} [Field L] [Fintype L] [DecidableEq L]
   (K : Type) [Field K] [Algebra K L] (β : Basis (Fin (2 ^ κ)) K L)
+variable [Algebra (ZMod 2) L] {r : ℕ} [NeZero r] (b : Basis (Fin r) (ZMod 2) L)
 variable {ℓ ℓ' R ϑ : ℕ} [NeZero ℓ'] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
-  (h_rate : ℓ' + R < 2 ^ κ) (h_dim : ℓ = ℓ' + κ)
+  (h_rate : ℓ' + R < r) (h_dim : ℓ = ℓ' + κ)
 
 /-- The scalar source claim and the packed first oracle are the shared input relation. -/
-theorem mem_relIn_iff (r : Fin ℓ → L) (s : L)
-    (ost : ∀ j, (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate).OStmtIn j)
+theorem mem_relIn_iff (z : Fin ℓ → L) (s : L)
+    (ost : ∀ j, (binaryBasefoldInput L b ℓ' R ϑ h_rate).OStmtIn j)
     (t : MultilinearPoly K ℓ) :
-    (((r, s), ost), t) ∈ TensorPrefix.relIn (biniusProfile κ L K β) h_dim
-        (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate) ↔
-      s = aeval r t.val ∧ BinaryBasefold.FirstOracleWitnessConsistent (ZMod 2) β
+    (((z, s), ost), t) ∈ TensorPrefix.relIn (biniusProfile κ L K β) h_dim
+        (binaryBasefoldInput L b ℓ' R ϑ h_rate) ↔
+      s = aeval z t.val ∧ BinaryBasefold.FirstOracleWitnessConsistent (ZMod 2) b
         (packMLE κ L K ℓ ℓ' h_dim (biniusProfile κ L K β).basis t)
-        (BinaryBasefold.getFirstOracle (ZMod 2) β ost) := by
-  change (s = aeval r t.val ∧ _ ) ↔ _
+        (BinaryBasefold.getFirstOracle (ZMod 2) b ost) := by
+  change (s = aeval z t.val ∧ _ ) ↔ _
   rw [TensorPrefix.packedMLE_components_eq_packMLE]
   rfl
 
 /-- Every source polynomial and query give an honest input with the exact packed encoding. -/
-theorem mem_relIn_strictView_honestPackedOracle (t : MultilinearPoly K ℓ) (r : Fin ℓ → L) :
-    (((r, aeval r t.val), honestPackedOracle κ L K β ℓ' R ϑ h_rate
+theorem mem_relIn_strictView_honestPackedOracle (t : MultilinearPoly K ℓ) (z : Fin ℓ → L) :
+    (((z, aeval z t.val), honestPackedOracle L b ℓ' R ϑ h_rate
         (packMLE κ L K ℓ ℓ' h_dim (biniusProfile κ L K β).basis t)), t) ∈
       TensorPrefix.relIn (biniusProfile κ L K β) h_dim
-        (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate).strictView := by
+        (binaryBasefoldInput L b ℓ' R ϑ h_rate).strictView := by
   constructor
   · rfl
-  · change (binaryBasefoldInput κ L K β ℓ' R ϑ h_rate).strictInitialCompatibility
+  · change (binaryBasefoldInput L b ℓ' R ϑ h_rate).strictInitialCompatibility
       ((PackingData.ofBasis (biniusProfile κ L K β).basis).packedMLE
         ((TensorPrefix.layout (biniusProfile κ L K β) h_dim).components t), _)
     rw [TensorPrefix.packedMLE_components_eq_packMLE]
-    exact honestPackedOracle_strictCompatible κ L K β ℓ' R ϑ h_rate _
+    exact honestPackedOracle_strictCompatible L b ℓ' R ϑ h_rate _
 
 end Binius.FRIBinius.Conformance

@@ -14,9 +14,9 @@ public import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # FRI-Binius IOPCS Prelude
-The packing basis is over `K`. Binary Basefold uses the same vectors over `ZMod 2`,
-where they need only be linearly independent. Hypercube indices use least-significant-bit-first
-order. Relaxed compatibility permits unique-radius closeness; strict compatibility requires
+Packing uses a `K`-basis. Binary Basefold uses a separately chosen basis over `ZMod 2`.
+Hypercube indices use least-significant-bit-first order.
+Relaxed compatibility permits unique-radius closeness; strict compatibility requires
 an exact first-codeword encoding. Functionality and honest coverage certify this oracle relation
 separately from the later opening protocol.
 -/
@@ -39,23 +39,16 @@ scoped instance instCardZModTwo : Fact (Fintype.card (ZMod 2) = 2) := ⟨ZMod.ca
 scoped instance instPrimeRingCharZModTwo : Fact (Nat.Prime (ringChar (ZMod 2))) :=
   ⟨CharP.prime_ringChar (ZMod 2)⟩
 
-/-- A packing basis remains linearly independent over the prime field. -/
-scoped instance instBinaryBasefoldVectorsIndependent {K L ι : Type} [Field K] [Field L]
-    [Algebra K L] [CharP L 2] (β : Basis ι K L) :
-    Fact (LinearIndependent (ZMod 2) (β : ι → L)) := by
-  have : CharP K 2 := (Algebra.charP_iff K L 2).mpr inferInstance
-  let : Algebra (ZMod 2) K := ZMod.algebra K 2
-  exact ⟨β.linearIndependent.restrict_scalars' (ZMod 2)⟩
+/-- An additive-domain basis supplies the independent vectors for Binary Basefold. -/
+scoped instance instBinaryBasefoldVectorsIndependent {L ι : Type} [Field L] [Algebra (ZMod 2) L]
+    (b : Basis ι (ZMod 2) L) : Fact (LinearIndependent (ZMod 2) (b : ι → L)) :=
+  ⟨b.linearIndependent⟩
 
 variable (κ : ℕ) [NeZero κ]
 variable (L : Type) [Field L] [Fintype L] [DecidableEq L]
   [SampleableType L]
 variable (K : Type) [Field K] [Algebra K L]
 variable (β : Basis (Fin (2 ^ κ)) K L)
-variable (ℓ ℓ' 𝓡 ϑ γ_repetitions : ℕ) [NeZero ℓ] [NeZero ℓ'] [NeZero 𝓡] [NeZero ϑ]
-variable (h_ℓ_add_R_rate : ℓ' + 𝓡 < 2 ^ κ)
-variable (h_l : ℓ = ℓ' + κ)
-variable [hdiv : Fact (ϑ ∣ ℓ')]
 
 /-- The canonical radix-two enumeration of the Boolean hypercube. -/
 def hypercubeEquivFin : (Fin κ → Fin 2) ≃ Fin (2 ^ κ) :=
@@ -70,31 +63,34 @@ reindexing `booleanHypercubeBasis` of `β`. -/
 def biniusProfile : RingSwitching.RingSwitchingProfile K L κ :=
   RingSwitching.tensorProductProfile κ K L (booleanHypercubeBasis κ L K β)
 
-variable [CharP L 2]
+variable [Algebra (ZMod 2) L]
+variable {r : ℕ} [NeZero r] (b : Basis (Fin r) (ZMod 2) L)
+variable (ℓ' 𝓡 ϑ : ℕ) [NeZero ℓ'] [NeZero 𝓡] [NeZero ϑ] [Fact (ϑ ∣ ℓ')]
+variable (h_ℓ_add_R_rate : ℓ' + 𝓡 < r)
 
-/-- The first-oracle interface from the packing vectors viewed over `ZMod 2`. -/
+/-- The first-oracle interface for the chosen additive-domain basis. -/
 def binaryBasefoldInput : RingSwitching.AbstractOStmtIn L ℓ' :=
-  BinaryBasefold.firstOracleInterface (ZMod 2) β (ϑ := ϑ)
+  BinaryBasefold.firstOracleInterface (ZMod 2) b (ϑ := ϑ)
     (h_ℓ_add_R_rate := h_ℓ_add_R_rate)
 
-omit [NeZero κ] [SampleableType L] [NeZero 𝓡] in
+omit [SampleableType L] [NeZero 𝓡] in
 /-- Unique-radius compatibility determines the initial committed polynomial. -/
 theorem binaryBasefold_initialCompatibility_functional :
-    (binaryBasefoldInput κ L K β ℓ' 𝓡 ϑ h_ℓ_add_R_rate).Functional :=
-  BinaryBasefold.firstOracleInterface_functional (ZMod 2) β ϑ
+    (binaryBasefoldInput L b ℓ' 𝓡 ϑ h_ℓ_add_R_rate).Functional :=
+  BinaryBasefold.firstOracleInterface_functional (ZMod 2) b ϑ
 
 /-- Honest first-codeword oracles cover every packed polynomial. -/
 def honestPackedOracle (t : MultilinearPoly L ℓ') :
-    ∀ j, (binaryBasefoldInput κ L K β ℓ' 𝓡 ϑ h_ℓ_add_R_rate).OStmtIn j :=
-  BinaryBasefold.honestInitialOracleStatement (ZMod 2) β ϑ
+    ∀ j, (binaryBasefoldInput L b ℓ' 𝓡 ϑ h_ℓ_add_R_rate).OStmtIn j :=
+  BinaryBasefold.honestInitialOracleStatement (ZMod 2) b ϑ
     (h_ℓ_add_R_rate := h_ℓ_add_R_rate) t
 
-omit [NeZero κ] [SampleableType L] [NeZero 𝓡] in
+omit [SampleableType L] [NeZero 𝓡] in
 /-- Honest families also meet the exact encoding premise used for completeness. -/
 theorem honestPackedOracle_strictCompatible (t : MultilinearPoly L ℓ') :
-    (binaryBasefoldInput κ L K β ℓ' 𝓡 ϑ h_ℓ_add_R_rate).strictInitialCompatibility
-      (t, honestPackedOracle κ L K β ℓ' 𝓡 ϑ h_ℓ_add_R_rate t) := by
+    (binaryBasefoldInput L b ℓ' 𝓡 ϑ h_ℓ_add_R_rate).strictInitialCompatibility
+      (t, honestPackedOracle L b ℓ' 𝓡 ϑ h_ℓ_add_R_rate t) := by
   classical
-  exact BinaryBasefold.firstOracleInterface_strictInitialCompatibility_honest (ZMod 2) β ϑ t
+  exact BinaryBasefold.firstOracleInterface_strictInitialCompatibility_honest (ZMod 2) b ϑ t
 
 end Binius.FRIBinius

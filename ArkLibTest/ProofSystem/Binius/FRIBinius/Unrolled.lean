@@ -45,21 +45,21 @@ local instance : Fact (Nat.Prime (ringChar (ZMod 2))) :=
 /-- The unrolled composition is secure for the input relation of the separate-sum-check
 composition. -/
 example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
-    ((Binius.FRIBinius.Unrolled.fullVerifier 2 (ZMod 2) basis
+    ((Binius.FRIBinius.Unrolled.fullVerifier 2 (ZMod 2) basis basis
       (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8).toVerifier
       (Oₛₒ := fun i : Empty => nomatch i)).rbrKnowledgeSoundness init impl
       (TensorPrefix.relIn profile rfl interface) acceptRejectOracleRel
-      (Binius.FRIBinius.Unrolled.fullError 2 (ZMod 2) basis (ϑ := 1) (by decide) 8) :=
-  Binius.FRIBinius.Unrolled.fullVerifier_rbrKnowledgeSoundness 2 (ZMod 2) basis
+      (Binius.FRIBinius.Unrolled.fullError 2 (ZMod 2) basis basis (ϑ := 1) (by decide) 8) :=
+  Binius.FRIBinius.Unrolled.fullVerifier_rbrKnowledgeSoundness 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8 init impl
 
 /-- The unrolled composite accepts the nonconstant honest source with probability one. -/
 theorem honest_probability {σ : Type} (init : ProbComp σ)
     (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     let R := OracleReduction.toReduction (Oₛₒ := fun i : Empty => nomatch i)
-      (Binius.FRIBinius.Unrolled.fullReduction 2 (ZMod 2) basis
+      (Binius.FRIBinius.Unrolled.fullReduction 2 (ZMod 2) basis basis
         (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8)
-    let pSpec := Binius.FRIBinius.Unrolled.pSpec 2 (ZMod 2) basis
+    let pSpec := Binius.FRIBinius.Unrolled.pSpec 2 (ZMod 2) basis basis
       (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) 8
     let pImpl : QueryImpl ([]ₒ + [pSpec.Challenge]ₒ'challengeOracleInterface)
       (StateT σ ProbComp) := QueryImpl.addLift impl challengeQueryImpl
@@ -67,12 +67,12 @@ theorem honest_probability {σ : Type} (init : ProbComp σ)
       let st ← init
       (simulateQ pImpl (R.run ((point, aeval point source.val), honestOracle) source).run).run' st}[
         (out.2, out.1.2.2) ∈ acceptRejectOracleRel ∧ out.1.2.1 = out.2] = 1 := by
-  have h := Binius.FRIBinius.Unrolled.fullReduction_perfectCompleteness 2 (ZMod 2) basis
+  have h := Binius.FRIBinius.Unrolled.fullReduction_perfectCompleteness 2 (ZMod 2) basis basis
     (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8 init impl
   change Reduction.perfectCompleteness init impl
     (TensorPrefix.relIn profile rfl interface.strictView)
     acceptRejectOracleRel (OracleReduction.toReduction (Oₛₒ := fun i : Empty => nomatch i)
-      (Binius.FRIBinius.Unrolled.fullReduction 2 (ZMod 2) basis
+      (Binius.FRIBinius.Unrolled.fullReduction 2 (ZMod 2) basis basis
         (ℓ' := 1) (R := 1) (ϑ := 1) (by decide) (ℓ := 3) rfl 8)) at h
   rw [Reduction.perfectCompleteness_eq_prob_one] at h
   exact h ((point, aeval point source.val), honestOracle) source honest_input_actual
@@ -143,6 +143,7 @@ end ArkLibTest.FRIBinius.Unrolled
 namespace ArkLibTest.FRIBinius.NonBitGroundField
 
 open ConcreteBinaryTower
+open scoped Binius.FRIBinius
 
 private abbrev K := ConcreteBTField 1
 private abbrev L := ConcreteBTField 3
@@ -153,25 +154,39 @@ local instance : SampleableType L := SampleableType.ofFintype L
 
 private def basis : Basis (Fin (2 ^ 2)) K L := multilinearBasis 1 3 (by decide)
 
-local instance : Fact (basis 0 = 1) := ⟨by
-  rw [basis, multilinearBasis_apply]
-  simp [Nat.getBit]⟩
+private theorem card_extension : Fintype.card L = 256 :=
+  (getBTFResult 3).fieldFintypeCard.trans (by norm_num)
+
+private def rawDomainBasis : Basis (Fin 8) (ZMod 2) L :=
+  Module.finBasisOfFinrankEq (ZMod 2) L (by
+    apply Nat.pow_right_injective (show 2 ≤ (2 : ℕ) by decide)
+    simpa [ZMod.card] using
+      (Module.card_eq_pow_finrank (K := ZMod 2) (V := L)).symm.trans card_extension)
+
+private def domainBasis : Basis (Fin 8) (ZMod 2) L :=
+  rawDomainBasis.map ((Units.mk0 (rawDomainBasis 0) (rawDomainBasis.ne_zero 0)).mulLeftLinearEquiv
+    (ZMod 2) L).symm
+
+local instance : Fact (domainBasis 0 = 1) := ⟨by
+  change ((Units.mk0 (rawDomainBasis 0) (rawDomainBasis.ne_zero 0)).mulLeftLinearEquiv
+    (ZMod 2) L).symm (rawDomainBasis 0) = 1
+  rw [Units.symm_mulLeftLinearEquiv_apply]
+  simp [rawDomainBasis.ne_zero]⟩
 local instance : Fact ((1 : ℕ) ∣ 1) := ⟨dvd_refl 1⟩
 
-private theorem hrate : 1 + 1 < 2 ^ 2 := by decide
+private theorem hrate : 1 + 1 < 8 := by decide
 private theorem hdim : 3 = 1 + 2 := rfl
 private abbrev profile := Binius.FRIBinius.biniusProfile 2 L K basis
 private abbrev interface :=
-  Binius.FRIBinius.RingSwitch.inputInterface 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate
+  Binius.FRIBinius.RingSwitch.inputInterface domainBasis (ℓ' := 1) (R := 1) (ϑ := 1) hrate
 private abbrev modularVerifier :=
-  Binius.FRIBinius.RingSwitch.fullVerifier 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8
+  Binius.FRIBinius.RingSwitch.fullVerifier 2 K basis domainBasis
+    (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8
 private abbrev unrolledVerifier :=
-  Binius.FRIBinius.Unrolled.fullVerifier 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8
+  Binius.FRIBinius.Unrolled.fullVerifier 2 K basis domainBasis
+    (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8
 
 example : Fintype.card K = 4 := (getBTFResult 1).fieldFintypeCard
-
-private theorem card_extension : Fintype.card L = 256 :=
-  (getBTFResult 3).fieldFintypeCard.trans (by norm_num)
 
 /-- Both verifiers have round-by-round knowledge soundness for the same input relation over
 the four-element ground field. -/
@@ -179,27 +194,29 @@ example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ Prob
     (modularVerifier.toVerifier
       (Oₛₒ := fun i : Empty => nomatch i)).rbrKnowledgeSoundness init impl
       (TensorPrefix.relIn profile hdim interface) acceptRejectOracleRel
-      (Binius.FRIBinius.RingSwitch.fullError 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate 8) ∧
+      (Binius.FRIBinius.RingSwitch.fullError 2 K basis domainBasis
+        (ℓ' := 1) (R := 1) (ϑ := 1) hrate 8) ∧
     (unrolledVerifier.toVerifier
       (Oₛₒ := fun i : Empty => nomatch i)).rbrKnowledgeSoundness init impl
       (TensorPrefix.relIn profile hdim interface) acceptRejectOracleRel
-      (Binius.FRIBinius.Unrolled.fullError 2 K basis (ℓ' := 1) (R := 1) (ϑ := 1) hrate 8) :=
-  ⟨Binius.FRIBinius.RingSwitch.fullVerifier_rbrKnowledgeSoundness 2 K basis
+      (Binius.FRIBinius.Unrolled.fullError 2 K basis domainBasis
+        (ℓ' := 1) (R := 1) (ϑ := 1) hrate 8) :=
+  ⟨Binius.FRIBinius.RingSwitch.fullVerifier_rbrKnowledgeSoundness 2 K basis domainBasis
       (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl,
-    Binius.FRIBinius.Unrolled.fullVerifier_rbrKnowledgeSoundness 2 K basis
+    Binius.FRIBinius.Unrolled.fullVerifier_rbrKnowledgeSoundness 2 K basis domainBasis
       (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl⟩
 
 example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     OracleProof.perfectCompleteness
-      (oracleProof := Binius.FRIBinius.Unrolled.fullReduction 2 K basis
+      (oracleProof := Binius.FRIBinius.Unrolled.fullReduction 2 K basis domainBasis
         (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8)
       (relation := TensorPrefix.relIn profile hdim interface.strictView)
       (init := init) (impl := impl) ∧
     OracleProof.knowledgeSoundness init impl (TensorPrefix.relIn profile hdim interface)
       unrolledVerifier
       (Binius.FRIBinius.Unrolled.concreteError 2 (L := L) (ℓ' := 1) (R := 1) 8) :=
-  Binius.FRIBinius.Unrolled.fullReduction_perfectCompleteness_and_knowledgeSoundness 2 K basis
-    (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl
+  Binius.FRIBinius.Unrolled.fullReduction_perfectCompleteness_and_knowledgeSoundness
+    2 K basis domainBasis (ℓ' := 1) (R := 1) (ϑ := 1) hrate hdim 8 init impl
 
 example :
     Binius.FRIBinius.RingSwitch.concreteError 2 (L := L) (ℓ' := 1) (R := 1) 8 < 1 ∧
@@ -209,35 +226,41 @@ example :
       Binius.BinaryBasefold.FullBinaryBasefold.concreteBinaryBasefoldKnowledgeError, card_extension]
   · norm_num [Binius.FRIBinius.Unrolled.concreteError, card_extension]
 
-/-! ### Two folds per block -/
+/-! ### Two folds per block with more domain vectors than packing vectors -/
 
 local instance : Fact ((2 : ℕ) ∣ 2) := ⟨dvd_refl 2⟩
 
-private theorem twoFoldsRate : 2 + 1 < 2 ^ 2 := by decide
+private theorem twoFoldsRate : 2 + 2 < 8 := by decide
 private theorem twoFoldsDim : 4 = 2 + 2 := rfl
 private abbrev twoFoldsRelation :=
   TensorPrefix.relIn profile twoFoldsDim
-    (Binius.FRIBinius.binaryBasefoldInput 2 L K basis 2 1 2 twoFoldsRate)
+    (Binius.FRIBinius.binaryBasefoldInput L domainBasis 2 2 2 twoFoldsRate)
 private abbrev twoFoldsVerifier :=
-  Binius.FRIBinius.Unrolled.fullVerifier 2 K basis
-    (ℓ' := 2) (R := 1) (ϑ := 2) twoFoldsRate twoFoldsDim 8
+  Binius.FRIBinius.Unrolled.fullVerifier 2 K basis domainBasis
+    (ℓ' := 2) (R := 2) (ϑ := 2) twoFoldsRate twoFoldsDim 8
+
+/-- The modular opening also accepts this choice, which violates the old
+requirement `ℓ' + R < 2 ^ κ`. -/
+example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :=
+  Binius.FRIBinius.RingSwitch.fullReduction_perfectCompleteness 2 K basis domainBasis
+    (ϑ := 2) twoFoldsRate twoFoldsDim 8 init impl
 
 /-- Ordinary security at the sharper bound for two folds per block over a non-bit ground field. -/
 example {σ : Type} (init : ProbComp σ) (impl : QueryImpl []ₒ (StateT σ ProbComp)) :
     let err := Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize 2
-      (L := L) (ℓ' := 2) (R := 1) (ϑ := 2) 8
+      (L := L) (ℓ' := 2) (R := 2) (ϑ := 2) 8
     OracleProof.knowledgeSoundness init impl twoFoldsRelation twoFoldsVerifier err ∧
       OracleProof.soundness init impl twoFoldsRelation.language twoFoldsVerifier err :=
-  ⟨Binius.FRIBinius.Unrolled.fullVerifier_knowledgeSoundness_withBlockSize 2 K basis
+  ⟨Binius.FRIBinius.Unrolled.fullVerifier_knowledgeSoundness_withBlockSize 2 K basis domainBasis
       twoFoldsRate twoFoldsDim 8 init impl,
-    Binius.FRIBinius.Unrolled.fullVerifier_soundness_withBlockSize 2 K basis
+    Binius.FRIBinius.Unrolled.fullVerifier_soundness_withBlockSize 2 K basis domainBasis
       twoFoldsRate twoFoldsDim 8 init impl⟩
 
 example :
     let err := Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize 2
-      (L := L) (ℓ' := 2) (R := 1) (ϑ := 2) 8
-    err = 6 / 256 + (2 / 3 : ℝ≥0) * (8 / 256) + (3 / 4 : ℝ≥0) ^ 8 ∧
-      err < Binius.FRIBinius.Unrolled.concreteError 2 (L := L) (ℓ' := 2) (R := 1) 8 ∧
+      (L := L) (ℓ' := 2) (R := 2) (ϑ := 2) 8
+    err = 6 / 256 + (2 / 3 : ℝ≥0) * (16 / 256) + (5 / 8 : ℝ≥0) ^ 8 ∧
+      err < Binius.FRIBinius.Unrolled.concreteError 2 (L := L) (ℓ' := 2) (R := 2) 8 ∧
       err < 1 := by
   have hsub : (4 : ℝ≥0) - 1 = 3 := tsub_eq_of_eq_add (by norm_num)
   norm_num [Binius.FRIBinius.Unrolled.concreteErrorWithBlockSize,
