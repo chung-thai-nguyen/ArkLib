@@ -1,8 +1,8 @@
 {
   "counts": {
-    "files_with_citations": 574,
-    "keys_cited": 83,
-    "total_citation_edges": 768
+    "files_with_citations": 595,
+    "keys_cited": 88,
+    "total_citation_edges": 802
   },
   "files": {
     "ArkLib/AGM/Basic.lean": [
@@ -867,6 +867,11 @@
       "BCHKS25",
       "DKT26"
     ],
+    "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/CertificateWitnesses.lean": [
+      "ABF26",
+      "DKT26",
+      "Kin26"
+    ],
     "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/ListDecoding.lean": [
       "ABF26",
       "BCHKS25",
@@ -916,6 +921,35 @@
     ],
     "ArkLib/Data/CodingTheory/ProximityGenerator/TensorGenerator.lean": [
       "BCGM25"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Basic.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/PellikaanWu.lean": [
+      "CWYZ26",
+      "PW04"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/PersistenceDescent.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Persistent.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Probability.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/RationalPair.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Separation.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/Grid.lean": [
+      "CWYZ26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedMuller/PellikaanWu.lean": [
+      "CWYZ26",
+      "PW04"
     ],
     "ArkLib/Data/CodingTheory/ReedSolomon.lean": [
       "ACFY24"
@@ -979,6 +1013,9 @@
     ],
     "ArkLib/Data/CodingTheory/ReedSolomon/ListDecodability/Capacity/WeightedSupportInterpolant.lean": [
       "DKT26"
+    ],
+    "ArkLib/Data/CodingTheory/ReedSolomon/ListDecodability/CosetList.lean": [
+      "Kin26"
     ],
     "ArkLib/Data/CodingTheory/ReedSolomon/ListDecodability/DirectJetList.lean": [
       "DKT26"
@@ -1594,6 +1631,23 @@
     "ArkLib/Data/Probability/Uniform.lean": [
       "AGL24"
     ],
+    "ArkLib/Interaction/Security/Implications.lean": [
+      "CMS19",
+      "ChiesaYogev2024"
+    ],
+    "ArkLib/Interaction/Security/RoundByRound.lean": [
+      "ABF26",
+      "ACFY24",
+      "BCFW25"
+    ],
+    "ArkLib/Interaction/Security/StateRestoration.lean": [
+      "BCFW25",
+      "ChiesaYogev2024"
+    ],
+    "ArkLib/Interaction/Security/StateRestorationBudget.lean": [
+      "BCFW25",
+      "ChiesaYogev2024"
+    ],
     "ArkLib/OracleReduction/Basic.lean": [
       "BCS16"
     ],
@@ -1704,6 +1758,12 @@
       "DP24"
     ],
     "ArkLib/ProofSystem/Binius/BinaryBasefold/Steps/Relay.lean": [
+      "DP24"
+    ],
+    "ArkLib/ProofSystem/Binius/FRIBinius/Unrolled/General.lean": [
+      "DP24"
+    ],
+    "ArkLib/ProofSystem/Binius/FRIBinius/Unrolled/Spec.lean": [
       "DP24"
     ],
     "ArkLib/ProofSystem/Component/SendChallenge.lean": [
@@ -1820,6 +1880,22 @@
     ],
     "ArkLib/ProofSystem/Stir/Quotienting.lean": [
       "ACFY24stir"
+    ],
+    "ArkLib/ProofSystem/Sumcheck/Computable.lean": [
+      "LFKN92",
+      "Thaler2023"
+    ],
+    "ArkLib/ProofSystem/Sumcheck/Indexed.lean": [
+      "LFKN92",
+      "Thaler2023"
+    ],
+    "ArkLib/ProofSystem/Sumcheck/IntervalSoundness.lean": [
+      "LFKN92",
+      "Thaler2023"
+    ],
+    "ArkLib/ProofSystem/Sumcheck/Soundness.lean": [
+      "LFKN92",
+      "Thaler2023"
     ],
     "ArkLib/ProofSystem/Sumcheck/Spec/General.lean": [
       "BBS24",
@@ -1946,6 +2022,7 @@
       "ArkLib/Data/CodingTheory/ProximityGap/CapacityBounds/Entropy/Counting.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/CapacityBounds.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/Errors.lean",
+      "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/CertificateWitnesses.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/ListDecoding.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/InformationSetLowerBound.lean",
@@ -1956,6 +2033,7 @@
       "ArkLib/Data/CodingTheory/ReedSolomon/Multiplicity.lean",
       "ArkLib/Data/CodingTheory/SubspaceDesign.lean",
       "ArkLib/Data/Probability/Combinatorial.lean",
+      "ArkLib/Interaction/Security/RoundByRound.lean",
       "ArkLib/OracleReduction/Security/RoundByRound.lean",
       "ArkLib/ProofSystem/ToyProblem/ConstrainedCode.lean",
       "ArkLib/ProofSystem/ToyProblem/Definitions.lean",
@@ -1982,7 +2060,8 @@
       "ArkLib/Data/Domain/CosetFftDomain/Block.lean",
       "ArkLib/Data/Domain/CosetFftDomain/Pullback.lean",
       "ArkLib/Data/Polynomial/FoldingPolynomial.lean",
-      "ArkLib/Data/Polynomial/Indicator.lean"
+      "ArkLib/Data/Polynomial/Indicator.lean",
+      "ArkLib/Interaction/Security/RoundByRound.lean"
     ],
     "ACFY24stir": [
       "ArkLib/Data/CodingTheory/ListDecodability.lean",
@@ -2040,7 +2119,10 @@
       "ArkLib/ProofSystem/Sumcheck/Spec/General.lean"
     ],
     "BCFW25": [
-      "ArkLib/Data/CodingTheory/ExtensionCodes.lean"
+      "ArkLib/Data/CodingTheory/ExtensionCodes.lean",
+      "ArkLib/Interaction/Security/RoundByRound.lean",
+      "ArkLib/Interaction/Security/StateRestoration.lean",
+      "ArkLib/Interaction/Security/StateRestorationBudget.lean"
     ],
     "BCGM25": [
       "ArkLib/Data/CodingTheory/Basic/LinearCode.lean",
@@ -2209,6 +2291,9 @@
     "CHA24": [
       "ArkLib/Data/MvPolynomial/PrimeFingerprint.lean"
     ],
+    "CMS19": [
+      "ArkLib/Interaction/Security/Implications.lean"
+    ],
     "CS25": [
       "ArkLib/Data/CodingTheory/Connections/ListDecodingAndCA/CS25.lean",
       "ArkLib/Data/CodingTheory/Connections/ListDecodingAndCA.lean",
@@ -2223,6 +2308,15 @@
       "ArkLib/Data/CodingTheory/ListDecodability/Bounds.lean"
     ],
     "CWYZ26": [
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Basic.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/PellikaanWu.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/PersistenceDescent.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Persistent.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Probability.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/RationalPair.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/Separation.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/Grid.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/PellikaanWu.lean",
       "ArkLib/Data/CodingTheory/ReedSolomon/MutualCorrelatedAgreement/AffineCombiner/Basic.lean",
       "ArkLib/Data/CodingTheory/ReedSolomon/MutualCorrelatedAgreement/AffineCombiner/ChartIncidence.lean",
       "ArkLib/Data/CodingTheory/ReedSolomon/MutualCorrelatedAgreement/AffineCombiner/Computable.lean",
@@ -2247,6 +2341,11 @@
       "ArkLib/Data/CodingTheory/ListDecodability/Bounds/AgreementHypergraph.lean",
       "ArkLib/Data/CodingTheory/ListDecodability/Bounds/SubspaceDesign.lean",
       "ArkLib/Data/CodingTheory/ListDecodability/Bounds.lean"
+    ],
+    "ChiesaYogev2024": [
+      "ArkLib/Interaction/Security/Implications.lean",
+      "ArkLib/Interaction/Security/StateRestoration.lean",
+      "ArkLib/Interaction/Security/StateRestorationBudget.lean"
     ],
     "DG25": [
       "ArkLib/Data/CodingTheory/InterleavedCode.lean",
@@ -2345,6 +2444,7 @@
       "ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/WeightedSupport/Capacity.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/CapacityBounds.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/CapacityBounds.lean",
+      "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/CertificateWitnesses.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/ListDecoding.lean",
       "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/UniqueDecoding.lean",
       "ArkLib/Data/CodingTheory/ReedSolomon/Agreement.lean",
@@ -2507,6 +2607,8 @@
       "ArkLib/ProofSystem/Binius/BinaryBasefold/Steps/Fold/Protocol.lean",
       "ArkLib/ProofSystem/Binius/BinaryBasefold/Steps/Fold.lean",
       "ArkLib/ProofSystem/Binius/BinaryBasefold/Steps/Relay.lean",
+      "ArkLib/ProofSystem/Binius/FRIBinius/Unrolled/General.lean",
+      "ArkLib/ProofSystem/Binius/FRIBinius/Unrolled/Spec.lean",
       "ArkLib/ProofSystem/RingSwitching/Basic.lean",
       "ArkLib/ProofSystem/RingSwitching/Packing/Algebra.lean",
       "ArkLib/ProofSystem/RingSwitching/Packing/ClaimLayout.lean",
@@ -2656,6 +2758,10 @@
     "KZG10TR": [
       "ArkLib/Commitments/Functional/KZG/Binding.lean"
     ],
+    "Kin26": [
+      "ArkLib/Data/CodingTheory/ProximityGap/GrandChallenges/CertificateWitnesses.lean",
+      "ArkLib/Data/CodingTheory/ReedSolomon/ListDecodability/CosetList.lean"
+    ],
     "Kop15": [
       "ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/Basic.lean",
       "ArkLib/Data/CodingTheory/ReedSolomon/AgreementList.lean",
@@ -2670,6 +2776,10 @@
       "ArkLib/ToMathlib/Polynomial/HasseTaylor/Lifting.lean"
     ],
     "LFKN92": [
+      "ArkLib/ProofSystem/Sumcheck/Computable.lean",
+      "ArkLib/ProofSystem/Sumcheck/Indexed.lean",
+      "ArkLib/ProofSystem/Sumcheck/IntervalSoundness.lean",
+      "ArkLib/ProofSystem/Sumcheck/Soundness.lean",
       "ArkLib/ProofSystem/Sumcheck/Spec/General.lean"
     ],
     "LNP22": [
@@ -2832,6 +2942,10 @@
     "PS94": [
       "ArkLib/Data/CodingTheory/PolishchukSpielman/PolishchukSpielman.lean"
     ],
+    "PW04": [
+      "ArkLib/Data/CodingTheory/ReedMuller/AffineCombiner/PellikaanWu.lean",
+      "ArkLib/Data/CodingTheory/ReedMuller/PellikaanWu.lean"
+    ],
     "Poseidon2": [
       "ArkLib/Data/Hash/Poseidon2.lean"
     ],
@@ -2845,6 +2959,12 @@
     ],
     "Spi95": [
       "ArkLib/Data/CodingTheory/PolishchukSpielman/PolishchukSpielman.lean"
+    ],
+    "Thaler2023": [
+      "ArkLib/ProofSystem/Sumcheck/Computable.lean",
+      "ArkLib/ProofSystem/Sumcheck/Indexed.lean",
+      "ArkLib/ProofSystem/Sumcheck/IntervalSoundness.lean",
+      "ArkLib/ProofSystem/Sumcheck/Soundness.lean"
     ],
     "ZCF24": [
       "ArkLib/ProofSystem/Binius/BinaryBasefold/General.lean",
